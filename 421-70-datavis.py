@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 def main():
+	#connect to database
 	print("please enter the password for cs421g70:")
 	pw = str(input())
 	connection = psycopg2.connect(user="cs421g70",
@@ -11,17 +12,25 @@ def main():
 		host="comp421.cs.mcgill.ca",
 		port="5432",
 		database="cs421")
+
+
+	#first SQL query
 	query1 = """
 		SELECT b.brewery_name, b.street_address, AVG(r.rating) AS avg_rating
 		FROM brewery b JOIN rates r 
 		ON b.brewery_name=r.brewery_name AND b.street_address=r.street_address
 		GROUP BY b.brewery_name, b.street_address
-		ORDER BY avg_rating DESC, brewery_name;
+		ORDER BY avg_rating DESC, brewery_name
+		LIMIT 10;
 	"""
+
+	#run query - store data as dat1
 	dat1 = pd.read_sql_query(query1, connection)
 	dat1.set_index(['brewery_name', 'street_address'])
+	print("AverageRatings DF:\n")
 	print(dat1.head())
 
+	#visualize dat1
 	plt.figure()
 	ax1 = dat1.plot.bar(y='avg_rating', rot=0)
 	ax1.set_yticks([0, 1, 2, 3, 4, 5])
@@ -31,9 +40,10 @@ def main():
 	for(x,y) in zip(dat1.index, dat1.avg_rating):
 		ax1.text(x-0.1, 0.25, str(round(y, 2)), color='white')
 	fig1 = ax1.get_figure()
-	plt.savefig('AverageRatings.pdf')
+	plt.savefig('AverageRatings.png')
 	plt.close()
 	
+	#second SQL query
 	print('please enter the year of interest')
 	yr = int(input())
 	prevyr = str(yr-1) + "-12-31 23:59:59"
@@ -53,14 +63,17 @@ def main():
 	query2 = query2+"""
 		') AS t
 		GROUP BY t.brewery_name
-		ORDER BY num_orders DESC, brewery_name;
+		ORDER BY num_orders DESC, brewery_name
+		LIMIT 10;
 	"""
+
+	#run query - store data as dat2
 	dat2 = pd.read_sql_query(query2, connection)
 	dat2.set_index(['brewery_name'])
+	print("\nNumOrders DF:\n")
 	print(dat2.head())
 
-
-
+	#visualize dat2
 	plt.figure()
 	ax2 = dat2.plot.bar(y='num_orders', rot=0)
 	ax2.set_xticklabels(dat2.brewery_name, rotation=0)
@@ -69,9 +82,10 @@ def main():
 	for(x,y) in zip(dat2.index, dat2.num_orders):
 		ax2.text(x-0.1, 0.25, str(y), color='white')
 	fig2 = ax2.get_figure()
-	plt.savefig('NumOrders.pdf')
+	plt.savefig('NumOrders.png')
 	plt.close()
 
+	#close connection to database
 	conn = None
 
 
